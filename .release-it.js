@@ -1,7 +1,6 @@
 module.exports = {
     hooks: {
         'before:bump': ['npm test'],
-        'after:bump': ['npm run build'],
     },
     git: {
         requireCleanWorkingDir: true,
