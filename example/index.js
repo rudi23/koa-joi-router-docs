@@ -1,6 +1,9 @@
-const koa = require('koa')
-const app = new koa()
-app.use(require('./routes').middleware())
+const Koa = require('koa');
+
+const app = new Koa();
+app.use(require('./routes').middleware());
+
 app.listen(5566, () => {
-  console.log('API docs url: http://localhost:5566/apiDocs')
-})
+    // eslint-disable-next-line no-console
+    console.log('API docs url: http://localhost:5566/apiDocs');
+});

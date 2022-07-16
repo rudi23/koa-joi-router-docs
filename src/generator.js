@@ -1,6 +1,4 @@
-'use strict';
 const pathToRegex = require('path-to-regexp');
-
 const j2s = require('joi-to-swagger');
 const each = require('lodash/each');
 const pick = require('lodash/pick');
@@ -11,52 +9,56 @@ const mapValues = require('lodash/mapValues');
 const captureRegex = /(:\w+)/g;
 
 const JSON_SCHEMA_FIELDS = [
-  'type', 'required',
+    'type',
+    'required',
 
-  'maximum', 'exclusiveMaximum', 'minimum', 'exclusiveMinimum',
-  'maxLength', 'minLength', /*'pattern',*/ 'maxItems', 'minItems',
-  'uniqueItems', 'enum', 'multipleOf'
+    'maximum',
+    'exclusiveMaximum',
+    'minimum',
+    'exclusiveMinimum',
+    'maxLength',
+    'minLength',
+    /* 'pattern', */ 'maxItems',
+    'minItems',
+    'uniqueItems',
+    'enum',
+    'multipleOf',
 ];
-
-const JSON_SCHEMA_NESTED_FIELDS = [
-  'items', 'allOf', 'properties', 'additionalProperties'
-];
-
-function isRouter(router) {
-  return router.routes && router.use;
-}
 
 exports.mergeSwaggerPaths = function mergeSwaggerPaths(paths, newPaths, options) {
-  const warn = options && options.warnFunc;
+    const warn = options && options.warnFunc;
 
-  each(newPaths, function(newPathItemObj, path) {
-    let pathItemObj = paths[path] = paths[path] || {};
+    each(newPaths, function (newPathItemObj, path) {
+        const pathItemObj = (paths[path] = paths[path] || {});
 
-    // Merge operations into path
-    each(newPathItemObj, function(operationObj, method) {
-      if (pathItemObj[method]) {
-        // already exists!
-        if(warn) warn(`${path}[${method}] exists in multiple routes`);
-        return;
-      }
+        // Merge operations into path
+        each(newPathItemObj, function (operationObj, method) {
+            if (pathItemObj[method]) {
+                // already exists!
+                if (warn) {
+                    warn(`${path}[${method}] exists in multiple routes`);
+                }
 
-      pathItemObj[method] = operationObj;
+                return;
+            }
+
+            pathItemObj[method] = operationObj;
+        });
     });
-  });
 
-  return paths;
+    return paths;
 };
 
 exports.routesToSwaggerPaths = function routesToSwaggerPaths(routes, options) {
-  let paths = {};
+    const paths = {};
 
-  routes.forEach(function(route) {
-    let routePaths = exports.routeToSwaggerPaths(route, options);
+    routes.forEach(function (route) {
+        const routePaths = exports.routeToSwaggerPaths(route, options);
 
-    exports.mergeSwaggerPaths(paths, routePaths, options);
-  });
+        exports.mergeSwaggerPaths(paths, routePaths, options);
+    });
 
-  return paths;
+    return paths;
 };
 
 /**
@@ -65,196 +67,198 @@ exports.routesToSwaggerPaths = function routesToSwaggerPaths(routes, options) {
  * @returns {object} paths
  */
 exports.routeToSwaggerPaths = function routeToSwaggerPaths(route, options) {
-  options = options || {};
+    options = options || {};
 
-  let paths = {};
-  let routeDesc = {
-    responses: {}
-  };
+    const paths = {};
+    const routeDesc = {
+        responses: {},
+    };
 
-  if (!route.validate && route.handler && options.schemas) {
-    classValidatorToSwagger(route, options.schemas);
-  }
-
-  if (route.validate) {
-    let type = route.validate.type;
-
-    if (!type) {
-      // do nothing
-    } else if (type === 'json') {
-      routeDesc.consumes = ['application/json'];
-    } else if (type === 'form') {
-      routeDesc.consumes = ['application/x-www-form-urlencoded'];
-    } else if (type === 'multipart') {
-      routeDesc.consumes = ['multipart/form-data'];
+    if (!route.validate && route.handler && options.schemas) {
+        classValidatorToSwagger(route, options.schemas);
     }
 
-    routeDesc.parameters = exports.validateToSwaggerParameters(route.validate);
+    if (route.validate) {
+        const type = route.validate.type;
 
-    // add responses from output schema
-    let output = route.output || route.validate.output;
-    if (output) {
-      routeDesc.responses = Object.assign({}, options.defaultResponses);
-      Object.keys(output).forEach(x => {
-        x = x.toString();
-        // 200,206,300
-        let respCodes = x.split(',');
-        respCodes.forEach(code => {
-          // 200-299
-          if (code.includes('-')) {
-            code = code.split('-')[0];
-          }
-          code = code.trim();
-          routeDesc.responses[code] = Object.assign({
-            description: 'Success',
-          }, options.defaultResponses[code], outputToSwagger(output[x]));
-        });
-      });
+        if (!type) {
+            // do nothing
+        } else if (type === 'json') {
+            routeDesc.consumes = ['application/json'];
+        } else if (type === 'form') {
+            routeDesc.consumes = ['application/x-www-form-urlencoded'];
+        } else if (type === 'multipart') {
+            routeDesc.consumes = ['multipart/form-data'];
+        }
+
+        routeDesc.parameters = exports.validateToSwaggerParameters(route.validate);
+
+        // add responses from output schema
+        const output = route.output || route.validate.output;
+        if (output) {
+            routeDesc.responses = { ...options.defaultResponses };
+            Object.keys(output).forEach((x) => {
+                x = x.toString();
+                // 200,206,300
+                const respCodes = x.split(',');
+                respCodes.forEach((code) => {
+                    // 200-299
+                    if (code.includes('-')) {
+                        code = code.split('-')[0];
+                    }
+                    code = code.trim();
+                    routeDesc.responses[code] = {
+                        description: 'Success',
+                        ...options.defaultResponses[code],
+                        ...outputToSwagger(output[x]),
+                    };
+                });
+            });
+        }
     }
-  }
 
-  if (route.meta && route.meta.swagger) {
-    Object.assign(routeDesc, route.meta.swagger);
-  }
-
-  // This sets default 'path' parameters so swagger-ui doesn't complain.
-  let noPathParamsExist = !some(routeDesc.parameters, ['in', 'path']);
-  let noPathValidatorExists = get(route, 'validate.path') === undefined;
-  let noParamsValidatorExists = get(route, 'validate.params') === undefined;
-  if(noPathParamsExist && noPathValidatorExists && noParamsValidatorExists){
-    routeDesc.parameters = routeDesc.parameters || [];
-    let pathCaptures = route.path.match(captureRegex);
-    if (pathCaptures) {
-      each(pathCaptures, function(pathParameter){
-        routeDesc.parameters.push({
-          name: pathParameter.replace(':',''),
-          in: 'path',
-          type: 'string',
-          required: true
-        });
-      });
+    if (route.meta && route.meta.swagger) {
+        Object.assign(routeDesc, route.meta.swagger);
     }
-  }
 
-  let path = exports.swaggerizePath(route.path);
-
-  if (options.prefix) {
-    if (options.prefix.endsWith('/') || path.startsWith('/')) {
-      path = `${options.prefix}${path}`;
-    } else {
-      path = `${options.prefix}/${path}`;
+    // This sets default 'path' parameters so swagger-ui doesn't complain.
+    const noPathParamsExist = !some(routeDesc.parameters, ['in', 'path']);
+    const noPathValidatorExists = get(route, 'validate.path') === undefined;
+    const noParamsValidatorExists = get(route, 'validate.params') === undefined;
+    if (noPathParamsExist && noPathValidatorExists && noParamsValidatorExists) {
+        routeDesc.parameters = routeDesc.parameters || [];
+        const pathCaptures = route.path.match(captureRegex);
+        if (pathCaptures) {
+            each(pathCaptures, function (pathParameter) {
+                routeDesc.parameters.push({
+                    name: pathParameter.replace(':', ''),
+                    in: 'path',
+                    type: 'string',
+                    required: true,
+                });
+            });
+        }
     }
-  }
 
-  let pathItemObj = paths[path] = {};
+    let path = exports.swaggerizePath(route.path);
 
-  let methods = Array.isArray(route.method) ? route.method : [route.method];
+    if (options.prefix) {
+        if (options.prefix.endsWith('/') || path.startsWith('/')) {
+            path = `${options.prefix}${path}`;
+        } else {
+            path = `${options.prefix}/${path}`;
+        }
+    }
 
-  methods.forEach(function (method) {
-    let operationObj = routeDesc;
-    pathItemObj[method.toLowerCase()] = operationObj;
-  });
+    const pathItemObj = (paths[path] = {});
 
-  return paths;
+    const methods = Array.isArray(route.method) ? route.method : [route.method];
+
+    methods.forEach(function (method) {
+        const operationObj = routeDesc;
+        pathItemObj[method.toLowerCase()] = operationObj;
+    });
+
+    return paths;
 };
 
 function addSchemaParameters(parameters, location, schema) {
-  let swaggerObject = schema.swagger || j2s(schema).swagger;
-  if (swaggerObject.type === 'object' && swaggerObject.properties) {
-    each(swaggerObject.properties, function(value, name) {
-      if (value.type === 'string' && value.format === 'binary') {
-        value.type = 'file';
-        delete value.format;
-      }
-      let parameter = value;
-      parameter.name = name;
-      parameter.in = location;
-      parameters.push(parameter);
-    });
-  }
+    const swaggerObject = schema.swagger || j2s(schema).swagger;
+    if (swaggerObject.type === 'object' && swaggerObject.properties) {
+        each(swaggerObject.properties, function (value, name) {
+            if (value.type === 'string' && value.format === 'binary') {
+                value.type = 'file';
+                delete value.format;
+            }
+            const parameter = value;
+            parameter.name = name;
+            parameter.in = location;
+            parameters.push(parameter);
+        });
+    }
 }
 
-function outputToSwagger (respJson) {
-  let obj = {};
-  if (respJson && respJson.body) {
-    const respBody = respJson.body;
-    obj.schema = typeof respJson.ref === 'string'
-      ? {'$ref': respJson.ref}
-      : respBody.swagger || j2s(respBody).swagger;
-    if (respJson.schema || obj.schema.description) {
-      obj.description = respJson.schema || obj.schema.description;
+function outputToSwagger(respJson) {
+    const obj = {};
+    if (respJson && respJson.body) {
+        const respBody = respJson.body;
+        obj.schema =
+            typeof respJson.ref === 'string' ? { $ref: respJson.ref } : respBody.swagger || j2s(respBody).swagger;
+        if (respJson.schema || obj.schema.description) {
+            obj.description = respJson.schema || obj.schema.description;
+        }
     }
-  }
-  return obj;
+
+    return obj;
 }
 
 /**
  * Convert a JSON schema object to the subset used by Swagger
  */
-exports.jsonSchemaToSwagger = function(jsonSchema) {
-  if (Array.isArray(jsonSchema)) {
-    return jsonSchema.map(exports.jsonSchemaToSwagger);
-  }
-
-  let schema = pick(jsonSchema, JSON_SCHEMA_FIELDS);
-
-  if (jsonSchema.items) {
-    // FIXME HACK
-    if (Array.isArray(jsonSchema.items)) {
-      jsonSchema.items = jsonSchema.items[0];
+exports.jsonSchemaToSwagger = function jsonSchemaToSwagger(jsonSchema) {
+    if (Array.isArray(jsonSchema)) {
+        return jsonSchema.map(exports.jsonSchemaToSwagger);
     }
 
-    schema.items = exports.jsonSchemaToSwagger(jsonSchema.items);
-  }
+    const schema = pick(jsonSchema, JSON_SCHEMA_FIELDS);
 
-  if (jsonSchema.properties) {
-    schema.properties = mapValues(jsonSchema.properties, function(value) {
-      return exports.jsonSchemaToSwagger(value);
-    });
-  }
+    if (jsonSchema.items) {
+        // FIXME HACK
+        if (Array.isArray(jsonSchema.items)) {
+            jsonSchema.items = jsonSchema.items[0];
+        }
 
-  return schema;
+        schema.items = exports.jsonSchemaToSwagger(jsonSchema.items);
+    }
+
+    if (jsonSchema.properties) {
+        schema.properties = mapValues(jsonSchema.properties, function (value) {
+            return exports.jsonSchemaToSwagger(value);
+        });
+    }
+
+    return schema;
 };
 
 /**
  * Convert joi-router validate object to swagger
  */
-exports.validateToSwaggerParameters = function(validate) {
-  let parameters = [];
+exports.validateToSwaggerParameters = function validateToSwaggerParameters(validate) {
+    const parameters = [];
 
-  if (validate.header) {
-    addSchemaParameters(parameters, 'header', validate.header);
-  }
+    if (validate.header) {
+        addSchemaParameters(parameters, 'header', validate.header);
+    }
 
-  if (validate.query) {
-    addSchemaParameters(parameters, 'query', validate.query);
-  }
+    if (validate.query) {
+        addSchemaParameters(parameters, 'query', validate.query);
+    }
 
-  if (validate.path) {
-    // Still there for anyone who uses old syntax
-    addSchemaParameters(parameters, 'path', validate.path);
-  }
+    if (validate.path) {
+        // Still there for anyone who uses old syntax
+        addSchemaParameters(parameters, 'path', validate.path);
+    }
 
-  if (validate.params) {
-    addSchemaParameters(parameters, 'path', validate.params);
-  }
+    if (validate.params) {
+        addSchemaParameters(parameters, 'path', validate.params);
+    }
 
-  if (validate.formData) {
-    addSchemaParameters(parameters, 'formData', validate.formData);
-  }
+    if (validate.formData) {
+        addSchemaParameters(parameters, 'formData', validate.formData);
+    }
 
-  if (validate.body) {
-    const schema = validate.body;
-    let swaggerSchema = typeof validate.ref === 'string'
-      ? {'$ref': validate.ref}
-      : schema.swagger || j2s(schema).swagger;
-    parameters.push({
-      name: 'body',
-      in: 'body',
-      schema: swaggerSchema
-    });
-  }
-  return parameters;
+    if (validate.body) {
+        const schema = validate.body;
+        const swaggerSchema =
+            typeof validate.ref === 'string' ? { $ref: validate.ref } : schema.swagger || j2s(schema).swagger;
+        parameters.push({
+            name: 'body',
+            in: 'body',
+            schema: swaggerSchema,
+        });
+    }
+
+    return parameters;
 };
 
 /* Convert a joi-router path into a Swagger parameterized path,
@@ -263,74 +267,82 @@ exports.validateToSwaggerParameters = function(validate) {
  * FIXME: incomplete handling, escaping, etc
  * FIXME: throw error if a complex regex is used
  */
-exports.swaggerizePath = function swaggerizePath(path, options) {
-  let pathTokens = pathToRegex.parse(path);
+exports.swaggerizePath = function swaggerizePath(path) {
+    const pathTokens = pathToRegex.parse(path);
 
-  let segments = pathTokens.map(function (token) {
-    let segment = token;
+    const segments = pathTokens.map(function (token) {
+        let segment = token;
 
-    if (token.name) {
-      segment = `{${token.name}}`; //this means this is a complex regex group. for more info, read up on path-to-regexp, koa-joi-router uses it, it's great.
-    } else {
-      segment = token.replace('/',''); //remove leading slash, to handle things like complex routes: /users/:userId/friends/:friendId
-    }
+        if (token.name) {
+            segment = `{${token.name}}`; // this means this is a complex regex group. for more info, read up on path-to-regexp, koa-joi-router uses it, it's great.
+        } else {
+            segment = token.replace('/', ''); // remove leading slash, to handle things like complex routes: /users/:userId/friends/:friendId
+        }
 
-    return segment;
-  });
+        return segment;
+    });
 
-  return '/'+segments.join('/'); //path is normalized, just add that leading slash back to handle prefixes properly again.
+    return `/${segments.join('/')}`; // path is normalized, just add that leading slash back to handle prefixes properly again.
 };
 
-function classValidatorToSwagger (route, schemas) {
-  const handler = get(route, 'handler.0');
-  if (!handler) return;
-  if (!schemas || schemas.length) return;
-  try {
-    // route --> Controller & method
-    const clazz = handler.__class__;
-    const method = handler.__method__;
-    if (!clazz || !method) return;
-
-    // get configs from @decorators
-    const docs = Reflect.getMetadata('Docs', clazz, method);
-    const input = Reflect.getMetadata('ValidateInput', clazz, method);
-    const output = Reflect.getMetadata('ValidateOutput', clazz, method);
-
-    route.validate = {};
-    if (docs) {
-      route.meta = {swagger: docs};
-    } else {
-      route.meta = {swagger: { summary: route.path }};
+function classValidatorToSwagger(route, schemas) {
+    const handler = get(route, 'handler.0');
+    if (!handler) {
+        return;
     }
-
-    if (input) {
-      route.validate.type = input.type;
-
-      // class --> class-validator-jsonschema --> swagger schema
-      each(['query', 'params', 'body'], key => {
-        const clazz = input[key];
-        if (clazz) {
-          const schema = schemas[clazz.name];
-          if (schema) {
-            route.validate[key] = {swagger: schema};
-          }
+    if (!schemas || schemas.length) {
+        return;
+    }
+    try {
+        // route --> Controller & method
+        const clazz = handler.__class__;
+        const method = handler.__method__;
+        if (!clazz || !method) {
+            return;
         }
-      });
-    }
 
-    if (output) {
-      route.validate.output = {};
-      for (let key in output) {
-        const schema = schemas[output[key].name];
-        if (schema) {
-          route.validate.output[key] = {body: {
-            swagger: schema
-          }};
+        // get configs from @decorators
+        const docs = Reflect.getMetadata('Docs', clazz, method);
+        const input = Reflect.getMetadata('ValidateInput', clazz, method);
+        const output = Reflect.getMetadata('ValidateOutput', clazz, method);
+
+        route.validate = {};
+        if (docs) {
+            route.meta = { swagger: docs };
+        } else {
+            route.meta = { swagger: { summary: route.path } };
         }
-      }
+
+        if (input) {
+            route.validate.type = input.type;
+
+            // class --> class-validator-jsonschema --> swagger schema
+            each(['query', 'params', 'body'], (key) => {
+                const clazz = input[key];
+                if (clazz) {
+                    const schema = schemas[clazz.name];
+                    if (schema) {
+                        route.validate[key] = { swagger: schema };
+                    }
+                }
+            });
+        }
+
+        if (output) {
+            route.validate.output = {};
+            for (const key in output) {
+                const schema = schemas[output[key].name];
+                if (schema) {
+                    route.validate.output[key] = {
+                        body: {
+                            swagger: schema,
+                        },
+                    };
+                }
+            }
+        }
+    } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(`[joi-router-docs] Fail to generate docs for \`${route.path}\`, reason: `, err);
     }
-  } catch (err) {
-    console.warn(`[joi-router-docs] Fail to generate docs for \`${route.path}\`, reason: `, err);
-    return;
-  }
 }
