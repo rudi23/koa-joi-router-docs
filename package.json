@@ -39,33 +39,33 @@
   },
   "main": "src/index.js",
   "dependencies": {
-    "joi-to-swagger": "^6.1.0",
-    "lodash": "^4.17.21",
-    "path-to-regexp": "^6.2.1"
+    "joi-to-swagger": "6.1.0",
+    "lodash": "4.17.21",
+    "path-to-regexp": "6.2.1"
   },
   "lint-staged": {
     "*.{js,ts}": "eslint --fix",
     "*.{json,md}": "prettier --write"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.0.3",
-    "@commitlint/config-conventional": "^17.0.3",
-    "@koa-better-modules/joi-router": "^10.1.0",
-    "eslint": "^8.19.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "husky": "^8.0.1",
-    "intelli-espower-loader": "^1.1.0",
-    "lint-staged": "^13.0.3",
-    "mocha": "^10.0.0",
-    "power-assert": "^1.6.1",
-    "prettier": "^2.7.1",
-    "release-it": "^15.1.2"
+    "@commitlint/cli": "17.0.3",
+    "@commitlint/config-conventional": "17.0.3",
+    "@koa-better-modules/joi-router": "10.1.0",
+    "eslint": "8.19.0",
+    "eslint-config-airbnb-base": "15.0.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-plugin-prettier": "4.2.1",
+    "husky": "8.0.1",
+    "intelli-espower-loader": "1.1.0",
+    "lint-staged": "13.0.3",
+    "mocha": "10.0.0",
+    "power-assert": "1.6.1",
+    "prettier": "2.7.1",
+    "release-it": "15.1.2"
   },
   "optionalDependencies": {
-    "class-validator": "^0.13.2",
-    "class-validator-jsonschema": "^3.1.1",
-    "reflect-metadata": "^0.1.13"
+    "class-validator": "0.13.2",
+    "class-validator-jsonschema": "3.1.1",
+    "reflect-metadata": "0.1.13"
   }
 }
