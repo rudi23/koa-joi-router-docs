@@ -1,7 +1,9 @@
 const Koa = require('koa');
+const routes = require('./routes');
 
 const app = new Koa();
-app.use(require('./routes').middleware());
+
+app.use(routes.middleware());
 
 app.listen(5566, () => {
     // eslint-disable-next-line no-console

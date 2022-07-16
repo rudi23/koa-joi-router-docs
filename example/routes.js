@@ -6,7 +6,7 @@ const Joi = Router.Joi;
 /**
  * Define routes
  */
-const router = Router();
+const router = new Router();
 
 // Get /user/:id
 router.get('/user/:id', {

@@ -1,17 +1,16 @@
-Koa API Docs Example
----
+## Koa API Docs Example
 
 # Install
 
 ```bash
-git clone https://github.com/o2team/koa-joi-router-docs.git
+git clone https://github.com/rudi23/koa-joi-router-docs.git
 cd example/
-npm install
+npm ci
 ```
 
 # Run the service
 
 ```bash
-node index.js
+npm start
 open http://localhost:5566/apiDocs
 ```
