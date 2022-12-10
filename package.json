@@ -39,7 +39,7 @@
   },
   "main": "src/index.js",
   "dependencies": {
-    "joi-to-swagger": "6.1.1",
+    "joi-to-swagger": "6.2.0",
     "lodash": "4.17.21",
     "path-to-regexp": "6.2.1"
   },
