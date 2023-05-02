@@ -62,7 +62,7 @@
     "mocha": "10.2.0",
     "power-assert": "1.6.1",
     "prettier": "2.8.8",
-    "release-it": "15.10.2"
+    "release-it": "15.10.3"
   },
   "optionalDependencies": {
     "class-validator": "0.13.2",
