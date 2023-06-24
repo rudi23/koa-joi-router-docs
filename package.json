@@ -48,8 +48,8 @@
     "*.{json,md}": "prettier --write"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.6.5",
-    "@commitlint/config-conventional": "17.6.5",
+    "@commitlint/cli": "17.6.6",
+    "@commitlint/config-conventional": "17.6.6",
     "@koa-better-modules/joi-router": "10.1.0",
     "@release-it/conventional-changelog": "5.1.1",
     "eslint": "8.43.0",
