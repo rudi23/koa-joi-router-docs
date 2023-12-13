@@ -67,6 +67,6 @@
   "optionalDependencies": {
     "class-validator": "0.13.2",
     "class-validator-jsonschema": "3.1.1",
-    "reflect-metadata": "0.1.14"
+    "reflect-metadata": "0.2.0"
   }
 }
