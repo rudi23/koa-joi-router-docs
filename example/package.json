@@ -13,6 +13,6 @@
   "license": "MIT",
   "dependencies": {
     "koa": "^2.13.4",
-    "@koa-better-modules/joi-router": "^10.1.0"
+    "@koa-better-modules/joi-router": "^11.0.0"
   }
 }
