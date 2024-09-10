@@ -41,7 +41,7 @@
   "dependencies": {
     "joi-to-swagger": "6.2.0",
     "lodash": "4.17.21",
-    "path-to-regexp": "6.2.1"
+    "path-to-regexp": "7.2.0"
   },
   "lint-staged": {
     "*.{js,ts}": "eslint --fix",
